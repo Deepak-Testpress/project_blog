@@ -10,4 +10,9 @@ urlpatterns = [
         views.post_detail,
         name="post_detail",
     ),
+    path(
+        "<int:post_id>/share/",
+        views.PostShareView.as_view(),
+        name="post_share",
+    ),
 ]
