@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 from django.urls import reverse
 from taggit.managers import TaggableManager
+from django.db.models import Count
 
 
 class PublishedManager(models.Manager):
@@ -52,6 +53,16 @@ class Post(models.Model):
                 "day": self.publish.day,
                 "post_slug": self.slug,
             },
+        )
+
+    def get_top_four_similar_posts(self):
+        return (
+            Post.published.filter(
+                tags__in=self.tags.values_list("id", flat=True)
+            )
+            .exclude(id=self.id)
+            .annotate(same_tags=Count("tags"))
+            .order_by("-same_tags", "-publish")[:4]
         )
 
 
