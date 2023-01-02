@@ -36,5 +36,30 @@ class TestViews(ModelMixinTestCase, TestCase):
             },
         )
         response = self.client.get(post_detail_url)
+        print(self.create_published_posts(4))
 
         self.assertEqual(404, response.status_code)
+
+    def test_pagination_returns_last_page_if_page_out_of_range(self):
+        invalid_page_number = 999
+        response = self.client.get(
+            reverse("blog:post_list"),
+            {
+                "page": invalid_page_number,
+                "posts": self.create_published_posts(4),
+            },
+        )
+        self.assertEquals(
+            response.context["posts"].number,
+            response.context["posts"].paginator.page(2).number,
+        )
+
+    def test_pagination_returns_first_page_if_page_is_empty(self):
+        response = self.client.get(
+            reverse("blog:post_list"),
+            {"page": "", "posts": self.create_published_posts(4)},
+        )
+        self.assertEquals(
+            response.context["posts"].number,
+            response.context["posts"].paginator.page(1).number,
+        )
