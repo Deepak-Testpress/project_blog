@@ -2,10 +2,11 @@ from django.shortcuts import render, get_object_or_404
 from .models import Post
 from django.views.generic import ListView, FormView
 from django.core.mail import send_mail
-from blog.forms import EmailPostForm, CommentForm
+from blog.forms import EmailPostForm, CommentForm, SearchForm
 from django.urls import reverse_lazy
 from django.contrib.messages.views import SuccessMessageMixin
 from taggit.models import Tag
+from django.contrib.postgres.search import TrigramSimilarity
 
 
 class PostListView(ListView):
@@ -95,3 +96,26 @@ class PostShareView(SuccessMessageMixin, FormView):
             subject=f"{valid_data['from_name']} recommends you read {self.post_object.title}",
             recipient_list=[valid_data["to_email"]],
         )
+
+
+def post_search(request):
+    form = SearchForm()
+    query = form.cleaned_data.get("query")
+    results = []
+
+    if "query" in request.GET:
+        form = SearchForm(request.GET)
+        if form.is_valid():
+            results = (
+                Post.published.annotate(
+                    similarity=TrigramSimilarity("title", query),
+                )
+                .filter(similarity__gt=0.1)
+                .order_by("-similarity")
+            )
+
+    return render(
+        request,
+        "blog/post/search.html",
+        {"form": form, "query": query, "results": results},
+    )
