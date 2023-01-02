@@ -63,3 +63,11 @@ class TestViews(ModelMixinTestCase, TestCase):
             {"page": "test", "posts": self.create_published_posts(4)},
         )
         self.assertEquals(404, response.status_code)
+
+    def test_post_share_template(self):
+        post_share_url = reverse(
+            "blog:post_share", args=[self.published_post.id]
+        )
+        response = self.client.get(post_share_url)
+
+        self.assertTemplateUsed(response, "blog/post/share.html")
